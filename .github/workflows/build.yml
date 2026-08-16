@@ -1,0 +1,207 @@
+name: Compilar app
+
+# Se ejecuta al subir cambios, o manualmente desde la pestaña Actions.
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: 3.24.5
+
+jobs:
+  android:
+    name: Android
+    runs-on: ubuntu-latest
+
+    # Los secretos no se pueden leer en el "if" de un paso, pero sí
+    # aquí. Esto convierte "¿hay clave de firma?" en un simple sí/no.
+    env:
+      HAS_KEYSTORE: ${{ secrets.KEYSTORE_BASE64 != '' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      # Flutter genera las carpetas android/ e ios/ aparte, así el
+      # repositorio queda limpio y sin archivos autogenerados.
+      - name: Generar carpetas de plataforma
+        run: |
+          flutter create --org com.rumbapuntocom \
+                         --project-name rumba_app \
+                         --platforms=android,ios \
+                         /tmp/shell
+          cp -r /tmp/shell/android ./android
+          cp -r /tmp/shell/ios ./ios
+
+      - name: Aplicar personalizaciones
+        run: |
+          # Manifiesto, MainActivity, icono de notificación y firma.
+          cp -r overrides/android/. android/
+
+          # Por si alguna versión de Flutter genera la variante en Java.
+          rm -f android/app/src/main/java/com/rumbapuntocom/rumba_app/MainActivity.java
+
+          # Solo cambia el applicationId (el identificador en la tienda).
+          # El namespace de Kotlin se deja igual a propósito.
+          for f in android/app/build.gradle android/app/build.gradle.kts; do
+            [ -f "$f" ] || continue
+            sed -i 's/applicationId = "com\.rumbapuntocom\.rumba_app"/applicationId = "com.rumbapuntocom.radio"/' "$f"
+            sed -i 's/applicationId "com\.rumbapuntocom\.rumba_app"/applicationId "com.rumbapuntocom.radio"/' "$f"
+          done
+
+          # Engancha la configuración de firma.
+          if [ -f android/app/build.gradle ]; then
+            printf "\napply from: 'signing.gradle'\n" >> android/app/build.gradle
+          fi
+
+          echo "--- applicationId resultante ---"
+          grep -h applicationId android/app/build.gradle* || true
+
+      # Genera, a partir de assets/logo.png, las imágenes derivadas que
+      # no se versionan: el icono adaptativo y el icono de notificación
+      # en sus 5 tamaños. Así solo hace falta subir un logo al repo.
+      - name: Generar imágenes derivadas
+        run: |
+          pip install --quiet Pillow
+          python3 - <<'PY'
+          from PIL import Image, ImageDraw
+          import os
+
+          logo = Image.open('assets/logo.png').convert('RGBA')
+
+          # Icono adaptativo: deja zona segura alrededor (Android recorta).
+          s = logo.size[0]
+          pad = int(s * 0.30)
+          canvas = Image.new('RGBA', (s + pad * 2, s + pad * 2), (0, 0, 0, 0))
+          canvas.paste(logo, (pad, pad), logo)
+          canvas.resize((1024, 1024), Image.LANCZOS).save('assets/logo_adaptive.png')
+
+          # Icono de notificación: barras de ecualizador en blanco puro
+          # (Android lo pinta de un solo color, debe ser silueta con alfa).
+          sizes = {'mdpi': 24, 'hdpi': 36, 'xhdpi': 48, 'xxhdpi': 72, 'xxxhdpi': 96}
+          heights = [0.45, 0.80, 0.60, 0.95]
+          for name, px in sizes.items():
+              im = Image.new('RGBA', (px, px), (0, 0, 0, 0))
+              d = ImageDraw.Draw(im)
+              n = len(heights)
+              pad2 = px * 0.14
+              avail = px - pad2 * 2
+              bw = avail / (n * 2 - 1)
+              for i, h in enumerate(heights):
+                  x0 = pad2 + i * bw * 2
+                  y1 = px - pad2
+                  y0 = y1 - avail * h
+                  d.rounded_rectangle([x0, y0, x0 + bw, y1],
+                                      radius=bw * 0.35, fill=(255, 255, 255, 255))
+              out = f'android/app/src/main/res/drawable-{name}'
+              os.makedirs(out, exist_ok=True)
+              im.save(f'{out}/ic_notification.png')
+          print('Imágenes derivadas generadas.')
+          PY
+
+      # Sin secretos configurados, el APK se firma con la clave de debug:
+      # sirve para instalarlo y probarlo, pero Google Play lo rechaza.
+      - name: Preparar clave de firma
+        if: env.HAS_KEYSTORE == 'true'
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/rumba-release.jks
+          cat > android/key.properties <<EOF
+          storeFile=rumba-release.jks
+          storePassword=$STORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          EOF
+          echo "Se firmará con la clave de release."
+
+      - name: Avisar que no hay clave de firma
+        if: env.HAS_KEYSTORE != 'true'
+        run: echo "::warning::Sin clave de firma. El APK se firma con la clave de debug - sirve para probar, pero Google Play lo rechaza. Ver 'Publicar en Google Play' en el README."
+
+      - run: flutter pub get
+
+      - name: Generar iconos de la app
+        run: dart run flutter_launcher_icons
+
+      - name: Revisar el código
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: Compilar APK
+        run: flutter build apk --release
+
+      - name: Compilar AAB para Google Play
+        run: flutter build appbundle --release
+
+      - name: Guardar el APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rumba.Com-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+
+      - name: Guardar el AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rumba.Com-PlayStore-AAB
+          path: build/app/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
+  # Comprueba que la app también compila para iPhone. No genera nada
+  # instalable (eso requiere una cuenta de desarrollador de Apple).
+  # Se lanza a mano desde Actions porque los runners de macOS son lentos.
+  ios:
+    name: iOS (solo verificación)
+    runs-on: macos-latest
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Generar carpetas de plataforma
+        run: |
+          flutter create --org com.rumbapuntocom \
+                         --project-name rumba_app \
+                         --platforms=android,ios \
+                         /tmp/shell
+          cp -r /tmp/shell/ios ./ios
+
+      - name: Permitir audio en segundo plano
+        run: |
+          python3 - <<'PY'
+          import plistlib, pathlib
+          p = pathlib.Path('ios/Runner/Info.plist')
+          d = plistlib.loads(p.read_bytes())
+          modes = set(d.get('UIBackgroundModes', []))
+          modes.add('audio')
+          d['UIBackgroundModes'] = sorted(modes)
+          d['CFBundleDisplayName'] = 'Rumba.Com'
+          p.write_bytes(plistlib.dumps(d))
+          print('UIBackgroundModes =', d['UIBackgroundModes'])
+          PY
+
+      # Sin generar iconos a propósito: flutter_launcher_icons está
+      # configurado con android: true y aquí no existe la carpeta android/.
+      # Para verificar que compila no hacen falta.
+      - run: flutter pub get
+      - run: flutter build ios --release --no-codesign
