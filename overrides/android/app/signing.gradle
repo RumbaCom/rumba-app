@@ -1,0 +1,38 @@
+// Firma de release.
+//
+// Si existe android/key.properties (lo escribe el workflow a partir de
+// los secretos del repositorio), la app se firma con tu clave real.
+// Si no existe, cae a la clave de debug para que la compilación no falle
+// mientras solo estás probando. Un APK firmado con la clave de debug
+// sirve para instalar en tu teléfono, pero Google Play lo rechaza.
+
+def keystorePropertiesFile = rootProject.file("key.properties")
+def keystoreProperties = new Properties()
+def hasReleaseKey = keystorePropertiesFile.exists()
+
+if (hasReleaseKey) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+android {
+    signingConfigs {
+        if (hasReleaseKey) {
+            release {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig hasReleaseKey
+                ? signingConfigs.release
+                : signingConfigs.debug
+            minifyEnabled false
+            shrinkResources false
+        }
+    }
+}
