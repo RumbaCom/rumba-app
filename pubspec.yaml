@@ -1,0 +1,70 @@
+name: rumba_app
+description: Rumba.Com - Tu Radio. La programacion musical perfecta.
+publish_to: 'none'
+version: 2.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+# Las versiones van fijas a proposito (sin ^). Asi la compilacion en la
+# nube da siempre el mismo resultado y una actualizacion de una libreria
+# no rompe el build de un dia para otro.
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Audio: reproduccion del stream + metadata ICY (titulo de cancion)
+  just_audio: 0.9.42
+
+  # Reproduccion en segundo plano, notificacion multimedia,
+  # pantalla de bloqueo, Android Auto y CarPlay
+  audio_service: 0.18.15
+
+  # Estado reactivo
+  rxdart: 0.28.0
+
+  # Guardar preferencias y el historial de canciones
+  shared_preferences: 2.3.2
+
+  # Abrir WhatsApp, redes sociales y la politica de privacidad
+  url_launcher: 6.3.0
+
+  # Compartir la app
+  share_plus: 10.0.2
+
+  # Detectar si hay conexion
+  connectivity_plus: 6.0.5
+
+  # Consultar la cancion actual al panel de la emisora
+  http: 1.2.2
+
+  # Pedir el permiso de notificaciones en Android 13+
+  permission_handler: 11.3.1
+
+  cupertino_icons: 1.0.8
+
+# Fijar solo las dependencias directas no basta: las indirectas siguen
+# actualizandose solas. Esta se bloquea porque su version mas nueva esta
+# pensada para Flutter 3.29 y aqui usamos la 3.24.5.
+dependency_overrides:
+  permission_handler_android: 12.0.13
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: 4.0.0
+  flutter_launcher_icons: 0.14.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  image_path: "assets/logo.png"
+  adaptive_icon_background: "#0D1220"
+  adaptive_icon_foreground: "assets/logo_adaptive.png"
+  background_color_ios: "#0D1220"
