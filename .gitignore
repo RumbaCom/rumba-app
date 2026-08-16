@@ -1,0 +1,23 @@
+# Carpetas generadas por Flutter en cada compilación.
+# No hace falta subirlas: el workflow las regenera sola.
+/android/
+/ios/
+/build/
+/.dart_tool/
+/.flutter-plugins
+/.flutter-plugins-dependencies
+.packages
+
+# Claves de firma: nunca deben subirse al repositorio.
+*.jks
+*.keystore
+key.properties
+
+# Editores
+.idea/
+.vscode/
+*.iml
+
+# Sistema
+.DS_Store
+Thumbs.db
