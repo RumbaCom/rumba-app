@@ -7,6 +7,7 @@ import '../main.dart';
 import '../services/metadata.dart';
 import '../services/radio_handler.dart';
 import '../theme.dart';
+import '../widgets/equalizer_background.dart';
 import '../widgets/sleep_timer_sheet.dart';
 import '../widgets/spinning_logo.dart';
 
@@ -23,8 +24,14 @@ class PlayerScreen extends StatelessWidget {
         final isPlaying = state == RadioState.playing;
         final isConnecting = state == RadioState.connecting;
 
-        return SafeArea(
-          child: LayoutBuilder(
+        return Stack(
+          children: [
+            // Fondo de ecualizador, detras de todo.
+            Positioned.fill(
+              child: EqualizerBackground(active: isPlaying),
+            ),
+            SafeArea(
+              child: LayoutBuilder(
             builder: (context, constraints) {
               final discSize =
                   (constraints.maxWidth * 0.62).clamp(180.0, 260.0);
@@ -56,8 +63,10 @@ class PlayerScreen extends StatelessWidget {
                   ),
                 ),
               );
-            },
-          ),
+                },
+              ),
+            ),
+          ],
         );
       },
     );
