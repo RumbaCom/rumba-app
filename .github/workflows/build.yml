@@ -80,9 +80,10 @@ jobs:
 
           logo = Image.open('assets/logo.png').convert('RGBA')
 
-          # Icono adaptativo: deja zona segura alrededor (Android recorta).
+          # Icono adaptativo: el logo llena casi toda la zona segura del
+          # launcher (poco margen) para que se vea grande, sin marco oscuro.
           s = logo.size[0]
-          pad = int(s * 0.30)
+          pad = int(s * 0.14)
           canvas = Image.new('RGBA', (s + pad * 2, s + pad * 2), (0, 0, 0, 0))
           canvas.paste(logo, (pad, pad), logo)
           canvas.resize((1024, 1024), Image.LANCZOS).save('assets/logo_adaptive.png')
