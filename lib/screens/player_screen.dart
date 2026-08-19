@@ -11,6 +11,12 @@ import '../widgets/equalizer_background.dart';
 import '../widgets/sleep_timer_sheet.dart';
 import '../widgets/spinning_logo.dart';
 
+/// Sombra oscura para que el texto resalte sobre el fondo de ecualizador.
+const List<Shadow> _titleShadows = [
+  Shadow(color: Color(0xE60A0E1A), blurRadius: 12),
+  Shadow(color: Color(0xB3000000), blurRadius: 4, offset: Offset(0, 1)),
+];
+
 class PlayerScreen extends StatelessWidget {
   const PlayerScreen({super.key});
 
@@ -109,6 +115,7 @@ class _StatusRow extends StatelessWidget {
                 color: color,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
+                shadows: _titleShadows,
               ),
             ),
             if (remaining != null) ...[
@@ -152,15 +159,20 @@ class _NowPlaying extends StatelessWidget {
                 AppConfig.appName,
                 style: const TextStyle(
                   color: RumbaColors.text,
-                  fontSize: 19,
-                  fontWeight: FontWeight.w500,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  shadows: _titleShadows,
                 ),
               ),
               const SizedBox(height: 5),
               Text(
                 AppConfig.tagline,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: RumbaColors.dim, fontSize: 13),
+                style: const TextStyle(
+                  color: RumbaColors.text2,
+                  fontSize: 13,
+                  shadows: _titleShadows,
+                ),
               ),
             ],
           );
@@ -177,9 +189,10 @@ class _NowPlaying extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: RumbaColors.text,
-                fontSize: 19,
-                fontWeight: FontWeight.w500,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
                 height: 1.25,
+                shadows: _titleShadows,
               ),
             ),
             const SizedBox(height: 5),
@@ -188,7 +201,11 @@ class _NowPlaying extends StatelessWidget {
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: RumbaColors.dim, fontSize: 14),
+              style: const TextStyle(
+                color: RumbaColors.text2,
+                fontSize: 14,
+                shadows: _titleShadows,
+              ),
             ),
           ],
         );
