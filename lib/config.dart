@@ -42,8 +42,9 @@ class AppConfig {
   static const String whatsappMessage =
       'Hola Rumba.Com! Quiero pedir una canción:';
 
-  /// Politica de privacidad. Cuando la crees, pon aqui el enlace.
-  static const String privacyPolicyUrl = '';
+  /// Politica de privacidad.
+  static const String privacyPolicyUrl =
+      'https://sites.google.com/view/politicas-de-privacidad-rumba/p%C3%A1gina-principal';
 
   /// Enlace de la app en Google Play, usado al compartir y al calificar.
   static const String playStoreUrl =
