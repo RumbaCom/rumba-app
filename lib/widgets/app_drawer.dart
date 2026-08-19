@@ -107,11 +107,12 @@ class AppDrawer extends StatelessWidget {
               label: 'Califica la app',
               onTap: () => _open(context, AppConfig.playStoreUrl),
             ),
-            _Item(
-              icon: Icons.shield_outlined,
-              label: 'Política de privacidad',
-              onTap: () => _open(context, AppConfig.privacyPolicyUrl),
-            ),
+            if (AppConfig.privacyPolicyUrl.isNotEmpty)
+              _Item(
+                icon: Icons.shield_outlined,
+                label: 'Política de privacidad',
+                onTap: () => _open(context, AppConfig.privacyPolicyUrl),
+              ),
 
             const SizedBox(height: 24),
             const Padding(
