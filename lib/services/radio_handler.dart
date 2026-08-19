@@ -207,7 +207,6 @@ class RadioHandler extends BaseAudioHandler with SeekHandler {
         title: title,
         artist: artist,
         album: AppConfig.appName,
-        isLive: true,
         displayTitle: title,
         displaySubtitle: artist,
       ),
