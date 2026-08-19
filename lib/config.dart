@@ -37,13 +37,13 @@ class AppConfig {
   // ---------------------------------------------------------------
   /// Numero de WhatsApp para pedir canciones, en formato internacional
   /// sin +, sin espacios y sin guiones. Ejemplo Colombia: 573001234567
-  static const String whatsappNumber = '573001234567';
+  static const String whatsappNumber = '573043336106';
 
   static const String whatsappMessage =
       'Hola Rumba.Com! Quiero pedir una canción:';
 
-  static const String websiteUrl = 'https://rumbapuntocom.com';
-  static const String privacyPolicyUrl = 'https://rumbapuntocom.com/privacidad';
+  /// Politica de privacidad. Cuando la crees, pon aqui el enlace.
+  static const String privacyPolicyUrl = '';
 
   /// Enlace de la app en Google Play, usado al compartir y al calificar.
   static const String playStoreUrl =
@@ -58,22 +58,17 @@ class AppConfig {
     SocialLink(
       name: 'Facebook',
       icon: 'facebook',
-      url: 'https://facebook.com/rumbapuntocom',
+      url: 'https://www.facebook.com/profile.php?id=61553321344548&locale=es_LA',
     ),
     SocialLink(
       name: 'Instagram',
       icon: 'instagram',
-      url: 'https://instagram.com/rumbapuntocom',
+      url: 'https://www.instagram.com/rumba.comturadio',
     ),
     SocialLink(
       name: 'WhatsApp',
       icon: 'whatsapp',
       url: 'https://wa.me/$whatsappNumber',
-    ),
-    SocialLink(
-      name: 'Sitio web',
-      icon: 'web',
-      url: websiteUrl,
     ),
   ];
 
