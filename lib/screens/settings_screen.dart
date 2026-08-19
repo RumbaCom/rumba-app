@@ -82,11 +82,12 @@ class SettingsScreen extends StatelessWidget {
               onTap: () => _open(AppConfig.playStoreUrl),
             ),
 
-            ListTile(
-              leading: const Icon(Icons.shield_outlined),
-              title: const Text('Política de privacidad'),
-              onTap: () => _open(AppConfig.privacyPolicyUrl),
-            ),
+            if (AppConfig.privacyPolicyUrl.isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.shield_outlined),
+                title: const Text('Política de privacidad'),
+                onTap: () => _open(AppConfig.privacyPolicyUrl),
+              ),
 
             const _Label('ACERCA DE'),
             const Divider(),
