@@ -46,6 +46,11 @@ class RadioHandler extends BaseAudioHandler with SeekHandler {
   String? _lastTitle;
   bool _disposed = false;
 
+  /// La metadata ICY del stream va sincronizada con lo que se oye, asi que
+  /// es la fuente correcta. Cuando llega al menos un titulo por ICY, se
+  /// deja de usar el panel de la emisora (que va por su cuenta y desfasado).
+  bool _icyWorks = false;
+
   /// El usuario pauso o detuvo a proposito. Sirve para no "resucitar"
   /// la radio con un error que llega tarde.
   bool _userStopped = true;
@@ -101,14 +106,14 @@ class RadioHandler extends BaseAudioHandler with SeekHandler {
       }
     });
 
-    // Fuente de metadata. El panel de la emisora es mas fiable y da el
-    // historial; se usa si esta configurado. Si no, se lee la metadata
-    // cruda del propio stream (ICY).
-    if (AppConfig.nowPlayingApiUrl.isEmpty) {
-      _player.icyMetadataStream.listen((icy) {
-        _onNewTitle(Metadata.clean(icy?.info?.title));
-      });
-    }
+    // Fuente principal de metadata: la del propio stream (ICY), que va
+    // sincronizada con lo que suena. Se escucha siempre.
+    _player.icyMetadataStream.listen((icy) {
+      final clean = Metadata.clean(icy?.info?.title);
+      if (clean == null) return;
+      _icyWorks = true;
+      _onNewTitle(clean);
+    });
 
     // Si el stream se corta solo, reintenta.
     _player.processingStateStream.listen((state) {
@@ -154,7 +159,9 @@ class RadioHandler extends BaseAudioHandler with SeekHandler {
     if (AppConfig.nowPlayingApiUrl.isEmpty) return;
     if (_metaTimer != null) return;
 
-    _fetchNowPlaying();
+    // Se da unos segundos de ventaja a la metadata ICY (que va sincronizada)
+    // antes de consultar el panel de respaldo.
+    Future.delayed(const Duration(seconds: 6), _fetchNowPlaying);
     _metaTimer = Timer.periodic(
       const Duration(seconds: AppConfig.nowPlayingPollSeconds),
       (_) => _fetchNowPlaying(),
@@ -167,6 +174,9 @@ class RadioHandler extends BaseAudioHandler with SeekHandler {
   }
 
   Future<void> _fetchNowPlaying() async {
+    // Si el stream ya trae metadata ICY (sincronizada), el panel sobra.
+    if (_icyWorks) return;
+
     try {
       final res = await _http
           .get(Uri.parse(AppConfig.nowPlayingApiUrl))
